@@ -234,6 +234,8 @@ if sys.version[:1]!='3':
 
 
 class_pb=home+'mymodels/fish_cls_1dd43a659e87dc4fcd4eef5da7dc5e4a62998df8.pth'
+class_pb=home+'mymodels/fish_20251029_86.21.pth'
+labelmapfile=home+'mymodels/fish_20251029_86.21.pth.labelmap.csv'
 
 
 # YOLOModelFile=home+'mymodels/yolo8s.20231024.pt'
@@ -259,16 +261,28 @@ weixintoken=""
 
 # 加载 fishes
 fishes = []
-fp = codecs.open("../final.fish.1.txt", encoding='utf-8', mode="r")
+fishes_dict = {}
+fp = codecs.open("../final.fish.2025.txt", encoding='utf-8', mode="r")
 for line in fp:
     arr = line.replace("\n", "").split(",")
     fishes.append(arr)
-
+    fishes_dict[int(arr[0])] = {
+        'sn': arr[1],
+        'en': arr[2],
+        'phylum': arr[3],
+        'class': arr[4],
+        'order': arr[5],
+        'family': arr[6],
+        'status': arr[7],
+        'inatId': arr[8],
+        'wormsId': arr[9],
+        'genus': arr[1].split(" ")[0],
+    }
 print("Fish species #: " + str(len(fishes)))
 
 # 加载 lables
 labelmap = {}
-fp = codecs.open("mymodels/fish_cls_1dd43a659e87dc4fcd4eef5da7dc5e4a62998df8.lablemap.csv", encoding='utf-8', mode="r")
+fp = codecs.open(labelmapfile, encoding='utf-8', mode="r")
 for line in fp:
     arr = line.replace("\n", "").split(",")
     labelmap[int(arr[0])]=arr[1]
@@ -548,16 +562,16 @@ def getSpeciesInfoFromId(id):
         sid=labelmap[id]
         classid=sid[:1]
         rid=int(sid[1:])
-        if classid=='A' or classid=='R':
-            genus=RDD[rid][1].split(" ")[0]
-            print("genus: ",genus)
+        if classid=='F' or classid=='S':
+            genus=fishes_dict[rid]['genus']
+            # print("genus: ",genus)
             genuslower=genus.lower()
-            family=RDD[rid][6]
-            familylower=RDD[rid][6].lower()
+            family=fishes_dict[rid]['family']
+            familylower=family.lower()
             taxonString=(taxons[genuslower][2]+"|" + taxons[genuslower][3] + "|" + taxons[genuslower][1]) if genuslower in taxons else "||"+genus
             taxonString+="|" + (taxons[familylower][2]+"|" + taxons[familylower][3] + "|" + taxons[familylower][1]) if familylower in taxons else "||"+family
 
-            return classid,rid,RDD[rid][3] + "|" + RDD[rid][2] + "|" + RDD[rid][1]+"|"+taxonString, reptilewithbits[rid][3:] if rid<len(reptilewithbits) else zerobits 
+            return classid,rid,fishes[rid][3] + "|" + fishes[rid][2] + "|" + fishes[rid][1]+"|"+taxonString, fishwithbits[rid][3:] if rid<len(fishwithbits) else zerobits 
         else:
             return classid,rid,fishes[rid][3] + "|" + fishes[rid][2] + "|" + fishes[rid][1], fishwithbits[rid][3:] if rid<len(fishwithbits) else zerobits
     else:
@@ -767,7 +781,7 @@ if __name__ == '__main__':
     print("detection model loaded: " + YOLOModelFile)
 
     # net = timm.create_model("convnextv2_tiny", num_classes=16800)
-    net = timm.create_model("wide_resnet50_2", num_classes=18460)
+    net = timm.create_model("convnextv2_tiny", num_classes=21650)
     net = torch.compile(net, dynamic=False)
     state_dict = torch.load(class_pb, map_location="cpu")
     del state_dict["_config"]
@@ -1059,7 +1073,7 @@ if __name__ == '__main__':
 
                                 needtocheckqq=False
 
-                                print("    **** ", boxes)
+                                # print("    **** ", boxes)
 
                                 for idx in range(len(boxes)): 
                                     
